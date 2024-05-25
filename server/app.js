@@ -1,10 +1,8 @@
-import express from "express";
-import { Server } from "socket.io";
+import express, { Request, Response } from "express";
+import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 import cors from "cors";
 import jwt from "jsonwebtoken";
-// @ts-ignore
-import { Socket } from "dgram";
 import cookieParser from "cookie-parser";
 
 const secretKeyJWT = "adjkdjkdahjaaks";
@@ -29,13 +27,11 @@ app.use(
   })
 );
 
-// @ts-ignore
-app.get("/", (req, res) => {
+app.get("/", (_req: Request, res: Response) => {
   res.send("Hello World!");
 });
 
-// @ts-ignore
-app.get("/login", (req, res) => {
+app.get("/login", (_req: Request, res: Response) => {
   const token = jwt.sign({ _id: "adjkdjkdahjaaks" }, secretKeyJWT);
 
   res
@@ -45,34 +41,32 @@ app.get("/login", (req, res) => {
     });
 });
 
-// @ts-ignore
-const user = false;
+interface DecodedToken {
+  _id: string;
+}
 
-io.use((socket, next) => {
-  // @ts-ignore
+io.use((socket: Socket, next) => {
   cookieParser()(socket.request, socket.request.res, (err) => {
     if (err) return next(err);
 
-    // @ts-ignore
     const token = socket.request.cookies.token;
 
     if (!token) return next(new Error("Authentication Error"));
 
-    // @ts-ignore
-    const decoded = jwt.verify(token, secretKeyJWT);
+    const decoded = jwt.verify(token, secretKeyJWT) as DecodedToken;
     next();
   });
 });
 
-io.on("connection", (socket) => {
+io.on("connection", (socket: Socket) => {
   console.log("User Connected", socket.id);
 
-  socket.on("message", ({ room, message }) => {
+  socket.on("message", ({ room, message }: { room: string; message: string }) => {
     console.log({ room, message });
     io.to(room).emit("receive-message", message);
   });
 
-  socket.on("join-room", (room) => {
+  socket.on("join-room", (room: string) => {
     socket.join(room);
     console.log(`User joined room ${room}`);
   });
